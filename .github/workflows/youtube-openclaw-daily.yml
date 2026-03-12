@@ -1,0 +1,35 @@
+# YouTube OpenClaw 每日视频检索 - GitHub Actions
+# 每天 9:00 北京时间执行，检索视频并推送到 Telegram
+# 公开仓库免费，本机可关机
+
+name: YouTube OpenClaw 每日检索
+
+on:
+  schedule:
+    # 每天 9:00 北京时间 = 01:00 UTC（无夏令时）
+    - cron: "0 1 * * *"
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 仓库
+        uses: actions/checkout@v4
+
+      - name: 配置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+
+      - name: 执行视频检索并推送
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          USE_WEB_SEARCH: "1"
+          CHINESE_ONLY: "1"
+        run: python3 run_once.py

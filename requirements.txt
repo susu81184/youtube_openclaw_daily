@@ -1,0 +1,5 @@
+# Python 3.10+ 推荐
+google-api-python-client>=2.100.0
+google-auth-oauthlib>=1.2.0
+python-dotenv>=1.0.0
+duckduckgo-search>=4.0.0

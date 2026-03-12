@@ -1,0 +1,57 @@
+{
+  "name": "YouTube OpenClaw 每日视频检索",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * *"
+            }
+          ]
+        }
+      },
+      "id": "a1b2c3d4-1111-2222-3333-444455556666",
+      "name": "每天 9:00 触发",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0],
+      "webhookId": ""
+    },
+    {
+      "parameters": {
+        "command": "cd /Users/susu/学习/youtube_openclaw_daily && python3 run_once.py",
+        "executeOnce": true
+      },
+      "id": "b2c3d4e5-2222-3333-4444-555566667777",
+      "name": "执行视频检索并推送",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [280, 0]
+    }
+  ],
+  "connections": {
+    "每天 9:00 触发": {
+      "main": [
+        [
+          {
+            "node": "执行视频检索并推送",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

@@ -1,0 +1,5 @@
+# 复制到 crontab: crontab crontab.example
+# 或追加: (crontab -l 2>/dev/null; cat crontab.example) | crontab -
+
+# YouTube OpenClaw 每日视频检索 - 每天 9:00 执行
+0 9 * * * cd /Users/susu/学习/youtube_openclaw_daily && python3 run_once.py >> /tmp/youtube_openclaw_daily.log 2>&1
