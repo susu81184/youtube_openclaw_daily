@@ -11,9 +11,10 @@
 
 ## 搜索模式
 
-- **网页搜索**（推荐，免 API）：在 `.env` 中设置 `USE_WEB_SEARCH=1`，使用 DuckDuckGo 查找 OpenClaw 相关 YouTube 视频，无需 YouTube API，不受登录验证或配额限制
-- **API 搜索**：使用 YouTube Data API，需配置 `YOUTUBE_API_KEY`；若 API 失败会自动 fallback 到网页搜索
-- **网页搜索 + 订阅频道**：当 `USE_WEB_SEARCH=1` 时，若额外配置 `YOUTUBE_API_KEY` 及 OAuth 或 `YOUTUBE_CHANNEL_IDS`，会同时拉取订阅频道新视频并合并推送
+- **首选 YouTube API**（`USE_WEB_SEARCH=0` 或不设置）：使用 YouTube Data API 搜索，结果更稳定、可按发布时间筛选；需配置 `YOUTUBE_API_KEY`
+- **API 失败时自动 fallback 到 DuckDuckGo**：配额用尽、网络错误等情况下，自动切换到 DuckDuckGo 网页搜索
+- **强制网页搜索**：设置 `USE_WEB_SEARCH=1` 时仅用 DuckDuckGo，不调用 YouTube API
+- **报告中标明搜索来源**：每次推送会显示本次搜索使用的是「YouTube API」还是「DuckDuckGo」
 
 ## 前置（仅 API 模式需要）
 

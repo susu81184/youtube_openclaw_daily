@@ -35,6 +35,6 @@ jobs:
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
           YOUTUBE_CHANNEL_IDS: ${{ vars.YOUTUBE_CHANNEL_IDS }}
           YOUTUBE_HOURS_SINCE: "72"
-          USE_WEB_SEARCH: "1"
+          USE_WEB_SEARCH: "0"
           CHINESE_ONLY: "1"
         run: python3 run_once.py

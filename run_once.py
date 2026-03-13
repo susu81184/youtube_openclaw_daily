@@ -91,9 +91,11 @@ def _fmt_video(v: dict) -> list:
     ]
 
 
-def _build_report(search_videos: list, channel_videos: list, merged: list) -> str:
+def _build_report(search_videos: list, channel_videos: list, merged: list, search_source: str = "") -> str:
     lines = []
     lines.append(f"# OpenClaw 相关视频 - {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    if search_source:
+        lines.append(f"\n🔍 搜索来源: **{search_source}**")
 
     # 若视频同时出现在搜索和关注频道，归入关注频道更新
     channel_video_ids = {v["video_id"] for v in channel_videos}
@@ -142,31 +144,42 @@ def _send_telegram(text: str, bot_token: str, chat_id: str, log) -> bool:
 def main():
     log = _setup_logging()
     log.info("[%s] 开始检索: %s%s", datetime.now().strftime("%Y-%m-%d %H:%M"), SEARCH_QUERY, " (仅中文)" if CHINESE_ONLY else "")
-    if USE_WEB_SEARCH:
-        from search_web import run as search_run
-        log.info("使用网页搜索模式")
-    else:
-        from search_youtube import run as search_run
-    search_videos, channel_videos, merged = search_run()
 
-    # 网页搜索模式下，若配置了 YouTube API，额外拉取订阅频道更新并合并
-    if USE_WEB_SEARCH and YOUTUBE_API_KEY:
+    search_source = ""
+    search_videos, channel_videos, merged = [], [], []
+
+    # 1. 首选 YouTube API 搜索（需 YOUTUBE_API_KEY）
+    if YOUTUBE_API_KEY and not USE_WEB_SEARCH:
         try:
-            from search_youtube import fetch_channel_latest, merge_and_sort, _get_channel_ids
-            channel_ids = _get_channel_ids()
-            if channel_ids:
-                channel_items = fetch_channel_latest(YOUTUBE_API_KEY, channel_ids, HOURS_SINCE)
-                if channel_items:
-                    merged = merge_and_sort(search_videos, channel_items)
-                    channel_videos = channel_items
-                    log.info("订阅频道更新 %d 条（已合并）", len(channel_items))
+            from search_youtube import run as api_run
+            search_videos, channel_videos, merged = api_run()
+            if merged:
+                search_source = "YouTube API"
+                log.info("使用 YouTube API 搜索")
         except Exception as e:
-            log.warning("拉取订阅频道失败: %s", e)
+            log.warning("YouTube API 搜索失败: %s，将使用 DuckDuckGo 备用", e)
 
-    if not merged and not USE_WEB_SEARCH:
-        log.info("YouTube API 未返回结果，尝试网页搜索 fallback")
+    # 2. 若 API 未用或失败/无结果，使用 DuckDuckGo 备用
+    if not merged:
         from search_web import run as web_run
         search_videos, channel_videos, merged = web_run()
+        search_source = "DuckDuckGo"
+        log.info("使用 DuckDuckGo 网页搜索")
+        # 若配置了 API，仍拉取订阅频道更新并合并
+        if YOUTUBE_API_KEY:
+            try:
+                from search_youtube import fetch_channel_latest, merge_and_sort, _get_channel_ids
+                channel_ids = _get_channel_ids()
+                if channel_ids:
+                    channel_items = fetch_channel_latest(YOUTUBE_API_KEY, channel_ids, HOURS_SINCE)
+                    if channel_items:
+                        merged = merge_and_sort(search_videos, channel_items)
+                        channel_videos = channel_items
+                        log.info("订阅频道更新 %d 条（已合并）", len(channel_items))
+            except Exception as e:
+                log.warning("拉取订阅频道失败: %s", e)
+    elif not search_source:
+        search_source = "YouTube API"
 
     if not merged:
         log.warning("未获取到结果")
@@ -182,7 +195,7 @@ def main():
     # 按发布时间排序：越新越靠前，同天按综合得分
     merged.sort(key=lambda v: (_days_since_publish(v.get("published_at", "")), -(v.get("score", 0))))
 
-    report = _build_report(search_videos, channel_videos, merged)
+    report = _build_report(search_videos, channel_videos, merged, search_source)
     log.info("共 %d 条", len(merged))
     print("\n" + report)
 
