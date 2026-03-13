@@ -4,7 +4,7 @@ import logging
 import re
 import urllib.request
 import urllib.parse
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from config import (
@@ -17,6 +17,26 @@ from config import (
     YOUTUBE_API_KEY,
     HOURS_SINCE,
 )
+
+
+def _days_since_publish(published_at: str) -> float:
+    """解析发布时间，返回距今天数；解析失败返回 999"""
+    if not published_at:
+        return 999.0
+    try:
+        s = str(published_at)[:19].replace("T", " ").replace("Z", "").strip()
+        if len(s) >= 19:
+            dt = datetime.strptime(s[:19], "%Y-%m-%d %H:%M:%S")
+        elif len(s) >= 10:
+            dt = datetime.strptime(s[:10], "%Y-%m-%d")
+        else:
+            return 999.0
+        dt_utc = dt.replace(tzinfo=timezone.utc)
+        delta = datetime.now(timezone.utc) - dt_utc
+        return max(0.0, delta.total_seconds() / 86400)
+    except Exception:
+        return 999.0
+
 
 # 中文筛选：标题必须含 CJK，且中文占比高于英文
 _CJK_RE = re.compile(r"[\u4e00-\u9fff\u3400-\u4dbf]")
@@ -158,6 +178,9 @@ def main():
         if not merged:
             log.warning("未找到中文视频")
             return
+
+    # 按发布时间排序：越新越靠前，同天按综合得分
+    merged.sort(key=lambda v: (_days_since_publish(v.get("published_at", "")), -(v.get("score", 0))))
 
     report = _build_report(search_videos, channel_videos, merged)
     log.info("共 %d 条", len(merged))
