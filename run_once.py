@@ -59,21 +59,38 @@ def _setup_logging():
     return log
 
 
+def _fmt_video(v: dict) -> list:
+    """单个视频的格式化行"""
+    return [
+        f"- [{v['title']}]",
+        f"  - {v['url']}",
+        f"  - 频道: {v['channel']} | "
+        f"播放: {v['view_count']} | 点赞: {v['like_count']} | 评论: {v['comment_count']} | "
+        f"{v['published_at'][:10] if v.get('published_at') else ''}",
+        "",
+    ]
+
+
 def _build_report(search_videos: list, channel_videos: list, merged: list) -> str:
     lines = []
     lines.append(f"# OpenClaw 相关视频 - {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-    lines.append(f"\n按 观看·点赞·评论 综合排序，共 {len(merged)} 条\n")
 
-    for v in merged:
-        src_tag = " [关注]" if v.get("source") == "channel" else ""
-        lines.append(f"- [{v['title']}]{src_tag}")
-        lines.append(f"  - {v['url']}")
-        lines.append(
-            f"  - 频道: {v['channel']} | "
-            f"播放: {v['view_count']} | 点赞: {v['like_count']} | 评论: {v['comment_count']} | "
-            f"{v['published_at'][:10]}"
-        )
-        lines.append("")
+    channel_items = [v for v in merged if v.get("source") == "channel"]
+    search_items = [v for v in merged if v.get("source") != "channel"]
+
+    # 一、关注频道更新（单独列出）
+    if channel_items:
+        lines.append(f"\n## 关注频道更新（{len(channel_items)} 条）\n")
+        for v in channel_items:
+            lines.extend(_fmt_video(v))
+
+    # 二、搜索视频
+    if search_items:
+        lines.append(f"\n## 搜索视频（{len(search_items)} 条）\n")
+        for v in search_items:
+            lines.extend(_fmt_video(v))
+
+    lines.append(f"\n共 {len(merged)} 条")
     return "\n".join(lines).rstrip()
 
 
