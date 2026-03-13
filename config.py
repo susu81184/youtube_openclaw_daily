@@ -19,8 +19,8 @@ CHINESE_ONLY = os.environ.get("CHINESE_ONLY", "1").lower() in ("1", "true", "yes
 EFFECTIVE_SEARCH_QUERY = (SEARCH_QUERY + " 中文") if CHINESE_ONLY else SEARCH_QUERY
 # 中文模式下多拉取以便筛选后仍有足够数量
 EFFECTIVE_MAX_RESULTS = int(MAX_RESULTS * 3) if CHINESE_ONLY else MAX_RESULTS
-# 只搜最近多少小时内的新视频（24=当日）
-HOURS_SINCE = int(os.environ.get("YOUTUBE_HOURS_SINCE", "24"))
+# 只搜最近多少小时内的新视频（72=近3天，便于抓到订阅频道更新）
+HOURS_SINCE = int(os.environ.get("YOUTUBE_HOURS_SINCE", "72"))
 
 # 关注频道（二选一）：
 # 方式一：OAuth 登录后自动获取订阅，配置下面三项
