@@ -75,8 +75,10 @@ def _build_report(search_videos: list, channel_videos: list, merged: list) -> st
     lines = []
     lines.append(f"# OpenClaw 相关视频 - {datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
-    channel_items = [v for v in merged if v.get("source") == "channel"]
-    search_items = [v for v in merged if v.get("source") != "channel"]
+    # 若视频同时出现在搜索和关注频道，归入关注频道更新
+    channel_video_ids = {v["video_id"] for v in channel_videos}
+    channel_items = [v for v in merged if v["video_id"] in channel_video_ids]
+    search_items = [v for v in merged if v["video_id"] not in channel_video_ids]
 
     # 一、关注频道更新（单独列出）
     if channel_items:
