@@ -13,6 +13,7 @@
 
 - **网页搜索**（推荐，免 API）：在 `.env` 中设置 `USE_WEB_SEARCH=1`，使用 DuckDuckGo 查找 OpenClaw 相关 YouTube 视频，无需 YouTube API，不受登录验证或配额限制
 - **API 搜索**：使用 YouTube Data API，需配置 `YOUTUBE_API_KEY`；若 API 失败会自动 fallback 到网页搜索
+- **网页搜索 + 订阅频道**：当 `USE_WEB_SEARCH=1` 时，若额外配置 `YOUTUBE_API_KEY` 及 OAuth 或 `YOUTUBE_CHANNEL_IDS`，会同时拉取订阅频道新视频并合并推送
 
 ## 前置（仅 API 模式需要）
 
@@ -84,7 +85,8 @@ python search_for_agent.py "关键词"  # 自定义搜索词
 2. 在仓库 **Settings → Secrets and variables → Actions** 添加 Secrets：
    - `TELEGRAM_BOT_TOKEN`
    - `TELEGRAM_CHAT_ID`
-   - `YOUTUBE_API_KEY`（可选，`USE_WEB_SEARCH=1` 时可不填）
+   - `YOUTUBE_API_KEY`（可选：`USE_WEB_SEARCH=1` 时可不填；若需在网页搜索模式下推送订阅频道更新，必须填写）
+   - `YOUTUBE_CLIENT_ID` / `YOUTUBE_CLIENT_SECRET` / `YOUTUBE_REFRESH_TOKEN`（可选：用于 OAuth 获取订阅频道；或改用 `YOUTUBE_CHANNEL_IDS` 环境变量）
 3. 推送后自动生效，每天 9:00 北京时间执行；也可在 Actions 页 **Run workflow** 手动触发
 
 ## N8N 工作流（定时自动化）

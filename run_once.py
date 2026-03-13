@@ -14,6 +14,8 @@ from config import (
     TELEGRAM_CHAT_ID,
     USE_WEB_SEARCH,
     CHINESE_ONLY,
+    YOUTUBE_API_KEY,
+    HOURS_SINCE,
 )
 
 # 中文筛选：标题必须含 CJK，且中文占比高于英文
@@ -107,6 +109,21 @@ def main():
     else:
         from search_youtube import run as search_run
     search_videos, channel_videos, merged = search_run()
+
+    # 网页搜索模式下，若配置了 YouTube API，额外拉取订阅频道更新并合并
+    if USE_WEB_SEARCH and YOUTUBE_API_KEY:
+        try:
+            from search_youtube import fetch_channel_latest, merge_and_sort, _get_channel_ids
+            channel_ids = _get_channel_ids()
+            if channel_ids:
+                channel_items = fetch_channel_latest(YOUTUBE_API_KEY, channel_ids, HOURS_SINCE)
+                if channel_items:
+                    merged = merge_and_sort(search_videos, channel_items)
+                    channel_videos = channel_items
+                    log.info("订阅频道更新 %d 条（已合并）", len(channel_items))
+        except Exception as e:
+            log.warning("拉取订阅频道失败: %s", e)
+
     if not merged and not USE_WEB_SEARCH:
         log.info("YouTube API 未返回结果，尝试网页搜索 fallback")
         from search_web import run as web_run
