@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """每日 OpenClaw 相关视频检索 - 按观看/点赞/评论综合排序，可选 Telegram 推送"""
 import logging
+import os
 import re
+import ssl
 import urllib.request
 import urllib.parse
+import urllib.error
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -121,10 +124,15 @@ def _build_report(search_videos: list, channel_videos: list, merged: list, searc
 def _send_telegram(text: str, bot_token: str, chat_id: str, log) -> bool:
     if not bot_token or not chat_id:
         return False
-    # Telegram 单条上限 4096，分条发送
     chunk_size = 4000
     chunks = [text[i : i + chunk_size] for i in range(0, len(text), chunk_size)]
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    # SSL：默认验证；若环境有证书问题可设 TELEGRAM_SKIP_SSL_VERIFY=1
+    ssl_ctx = None
+    if os.environ.get("TELEGRAM_SKIP_SSL_VERIFY", "").lower() in ("1", "true", "yes"):
+        ssl_ctx = ssl.create_default_context()
+        ssl_ctx.check_hostname = False
+        ssl_ctx.verify_mode = ssl.CERT_NONE
     ok_count = 0
     for i, chunk in enumerate(chunks):
         data = urllib.parse.urlencode({"chat_id": chat_id, "text": chunk})
@@ -132,9 +140,27 @@ def _send_telegram(text: str, bot_token: str, chat_id: str, log) -> bool:
         try:
             req = urllib.request.Request(url, data=data, method="POST")
             req.add_header("Content-Type", "application/x-www-form-urlencoded; charset=utf-8")
-            with urllib.request.urlopen(req, timeout=15) as r:
+            with urllib.request.urlopen(req, timeout=15, context=ssl_ctx) as r:
                 if r.status == 200:
                     ok_count += 1
+        except (ssl.SSLCertVerificationError, urllib.error.URLError, OSError) as e:
+            err_str = str(e).lower()
+            if ssl_ctx is None and ("ssl" in err_str or "certificate" in err_str or "cert" in err_str):
+                # SSL 错误时重试一次（不验证证书），用于沙箱等环境
+                log.warning("Telegram SSL 验证失败，尝试跳过验证重试: %s", e)
+                ssl_ctx = ssl.create_default_context()
+                ssl_ctx.check_hostname = False
+                ssl_ctx.verify_mode = ssl.CERT_NONE
+                try:
+                    with urllib.request.urlopen(req, timeout=15, context=ssl_ctx) as r:
+                        if r.status == 200:
+                            ok_count += 1
+                except Exception as e2:
+                    log.warning("Telegram 推送失败: %s", e2)
+                    return False
+            else:
+                log.warning("Telegram 推送失败: %s", e)
+                return False
         except Exception as e:
             log.warning("Telegram 推送失败: %s", e)
             return False
