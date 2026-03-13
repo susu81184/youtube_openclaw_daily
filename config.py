@@ -32,14 +32,14 @@ CHANNEL_IDS = [
     c.strip() for c in os.environ.get("YOUTUBE_CHANNEL_IDS", "").split(",") if c.strip()
 ]
 
-# 综合排序权重：views, likes, comments, recency（更新时间优先）
+# 综合排序权重：views, likes, comments, recency（发布时间越近越靠前）
 # 得分 = views*1 + likes*100 + comments*50 + 时间衰减加分
-# 时间衰减：发布越新加分越高，100 天内线性衰减（0天=100分，100天=0分）
+# 时间衰减：发布越新加分越高，21 天内线性衰减（0天≈150000分，21天=0分），近期优先
 SORT_WEIGHT_VIEWS = float(os.environ.get("YOUTUBE_SORT_WEIGHT_VIEWS", "1"))
 SORT_WEIGHT_LIKES = float(os.environ.get("YOUTUBE_SORT_WEIGHT_LIKES", "100"))
 SORT_WEIGHT_COMMENTS = float(os.environ.get("YOUTUBE_SORT_WEIGHT_COMMENTS", "50"))
-SORT_WEIGHT_RECENCY = float(os.environ.get("YOUTUBE_SORT_WEIGHT_RECENCY", "5000"))  # 新近度权重，0=关闭
-SORT_RECENCY_DAYS = int(os.environ.get("YOUTUBE_SORT_RECENCY_DAYS", "100"))  # 多少天内衰减
+SORT_WEIGHT_RECENCY = float(os.environ.get("YOUTUBE_SORT_WEIGHT_RECENCY", "150000"))  # 新近度权重，0=关闭
+SORT_RECENCY_DAYS = int(os.environ.get("YOUTUBE_SORT_RECENCY_DAYS", "21"))  # 多少天内衰减（超期无加分）
 
 # 搜索模式：USE_WEB_SEARCH=1 时使用 DuckDuckGo 网页搜索（无需 YouTube API，避免登录验证限制）
 USE_WEB_SEARCH = os.environ.get("USE_WEB_SEARCH", "").lower() in ("1", "true", "yes")
