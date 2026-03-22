@@ -175,13 +175,14 @@ def main():
     search_videos, channel_videos, merged = [], [], []
 
     # 1. 首选 YouTube API 搜索（需 YOUTUBE_API_KEY）
-    if YOUTUBE_API_KEY and not USE_WEB_SEARCH:
+    if YOUTUBE_API_KEY and USE_WEB_SEARCH != "1":
         try:
             from search_youtube import run as api_run
             search_videos, channel_videos, merged = api_run()
             if merged:
                 search_source = "YouTube API"
                 log.info("使用 YouTube API 搜索")
+                log.info("搜索 %d 条 | 订阅频道 %d 条 | 合并 %d 条", len(search_videos), len(channel_videos), len(merged))
         except Exception as e:
             log.warning("YouTube API 搜索失败: %s，将使用 DuckDuckGo 备用", e)
 
