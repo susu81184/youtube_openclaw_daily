@@ -175,9 +175,7 @@ def main():
     search_videos, channel_videos, merged = [], [], []
 
     # 1. 首选 YouTube API 搜索（需 YOUTUBE_API_KEY）
-    log.info("USE_WEB_SEARCH=%s, YOUTUBE_API_KEY 存在=%s", USE_WEB_SEARCH, bool(YOUTUBE_API_KEY))
-    if YOUTUBE_API_KEY and USE_WEB_SEARCH != "1":
-        log.info("条件满足，尝试使用 YouTube API")
+    if YOUTUBE_API_KEY and not USE_WEB_SEARCH:
         try:
             from search_youtube import run as api_run
             log.info("search_youtube 导入成功")
